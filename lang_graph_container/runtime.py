@@ -67,7 +67,7 @@ class LangGraphRuntime:
             ):
                 last_value = value
                 await self.publisher.publish(resolved_thread_id, value)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             await self.publisher.publish(
                 resolved_thread_id,
                 {"error": str(exc), "thread_id": resolved_thread_id},

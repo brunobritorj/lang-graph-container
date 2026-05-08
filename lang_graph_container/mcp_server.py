@@ -14,6 +14,12 @@ from websockets.server import serve
 
 TOOLS: dict[str, dict[str, Any]] = {}
 WORKSPACE_ROOT = os.path.realpath(os.environ.get("MCP_SERVER_WORKSPACE", os.getcwd()))
+MAX_FETCH_BYTES = 500
+
+
+class NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        raise ValueError("Redirects are not allowed.")
 
 
 def tool(name: str, description: str, input_schema: dict[str, Any]):
@@ -74,8 +80,15 @@ def browser_fetch(url: str) -> str:
         ip = ipaddress.ip_address(address)
         if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_multicast or ip.is_unspecified:
             raise ValueError("Target host resolves to a private or otherwise blocked address.")
-    with urllib.request.urlopen(url, timeout=10) as response:
-        body = response.read(500).decode("utf-8", errors="replace")
+    opener = urllib.request.build_opener(NoRedirectHandler)
+    with opener.open(url, timeout=10) as response:
+        content_length = response.headers.get("Content-Length")
+        if content_length and int(content_length) > MAX_FETCH_BYTES:
+            raise ValueError("Response body is too large.")
+        body = response.read(MAX_FETCH_BYTES + 1)
+        if len(body) > MAX_FETCH_BYTES:
+            raise ValueError("Response body is too large.")
+        body = body.decode("utf-8", errors="replace")
     return body
 
 
@@ -109,7 +122,7 @@ async def handle_request(request: dict[str, Any]) -> dict[str, Any]:
         definition = TOOLS[tool_name]
         try:
             value = definition["callable"](**arguments)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             return {
                 "jsonrpc": "2.0",
                 "id": request_id,
@@ -140,7 +153,7 @@ async def unix_handler(reader: asyncio.StreamReader, writer: asyncio.StreamWrite
 
 
 async def main() -> None:
-    host = os.environ.get("MCP_SERVER_HOST", "0.0.0.0")
+    host = os.environ.get("MCP_SERVER_HOST", "127.0.0.1")
     port = int(os.environ.get("MCP_SERVER_PORT", "8765"))
     socket_path = os.environ.get("MCP_SERVER_SOCKET_PATH")
     if socket_path:

@@ -82,7 +82,7 @@ def _create_args_schema(tool: MCPToolSpec):
     if not fields:
         fields["input"] = (str, None)
     normalized_name = "".join(character for character in tool.name.title() if character.isalnum())
-    suffix = hashlib.sha1(tool.name.encode("utf-8")).hexdigest()[:8]
+    suffix = hashlib.sha256(tool.name.encode("utf-8")).hexdigest()[:8]
     model_name = f"{normalized_name or 'Tool'}Args{suffix}"
     return create_model(model_name, **fields)
 

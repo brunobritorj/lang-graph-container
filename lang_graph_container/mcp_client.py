@@ -80,7 +80,7 @@ def _create_args_schema(tool: MCPToolSpec):
         default = ... if name in required else None
         fields[name] = (annotation, default)
     if not fields:
-        fields["input"] = (str, None)
+        fields["default_arg"] = (str, None)
     normalized_name = "".join(character for character in tool.name.title() if character.isalnum())
     suffix = hashlib.sha256(tool.name.encode("utf-8")).hexdigest()[:8]
     model_name = f"{normalized_name or 'Tool'}Args{suffix}"

@@ -67,7 +67,7 @@ def browser_fetch(url: str) -> str:
         raise ValueError("Only http and https URLs are allowed.")
     if not parsed.hostname:
         raise ValueError("A hostname is required.")
-    if parsed.hostname in {"localhost"}:
+    if parsed.hostname == "localhost":
         raise ValueError("Localhost is not allowed.")
     try:
         resolved_addresses = {

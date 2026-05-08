@@ -88,15 +88,19 @@ async def load_mcp_tools(settings: AppSettings) -> list[StructuredTool]:
     client = MCPClient(settings)
     tool_specs = await client.list_tools()
     tools: list[StructuredTool] = []
+
+    def make_tool_coroutine(tool_name: str):
+        async def _arun(**kwargs: Any) -> str:
+            return await client.call_tool(tool_name, kwargs)
+
+        return _arun
+
     for spec in tool_specs:
         args_schema = _create_args_schema(spec)
 
-        async def _arun(_spec_name: str = spec.name, **kwargs: Any) -> str:
-            return await client.call_tool(_spec_name, kwargs)
-
         tools.append(
             StructuredTool.from_function(
-                coroutine=_arun,
+                coroutine=make_tool_coroutine(spec.name),
                 name=spec.name,
                 description=spec.description,
                 args_schema=args_schema,

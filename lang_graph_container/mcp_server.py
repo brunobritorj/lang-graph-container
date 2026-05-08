@@ -14,7 +14,7 @@ from websockets.server import serve
 
 TOOLS: dict[str, dict[str, Any]] = {}
 WORKSPACE_ROOT = os.path.realpath(os.environ.get("MCP_SERVER_WORKSPACE", os.getcwd()))
-MAX_FETCH_BYTES = 500
+MAX_PREVIEW_BYTES = 500
 
 
 class NoRedirectHandler(urllib.request.HTTPRedirectHandler):
@@ -83,10 +83,10 @@ def browser_fetch(url: str) -> str:
     opener = urllib.request.build_opener(NoRedirectHandler)
     with opener.open(url, timeout=10) as response:
         content_length = response.headers.get("Content-Length")
-        if content_length and int(content_length) > MAX_FETCH_BYTES:
+        if content_length and int(content_length) > MAX_PREVIEW_BYTES:
             raise ValueError("Response body is too large.")
-        body = response.read(MAX_FETCH_BYTES + 1)
-        if len(body) > MAX_FETCH_BYTES:
+        body = response.read(MAX_PREVIEW_BYTES + 1)
+        if len(body) > MAX_PREVIEW_BYTES:
             raise ValueError("Response body is too large.")
         body = body.decode("utf-8", errors="replace")
     return body
@@ -162,12 +162,14 @@ async def main() -> None:
             os.makedirs(directory, exist_ok=True)
         if os.path.exists(socket_path):
             os.remove(socket_path)
+    shutdown = asyncio.Event()
     async with serve(websocket_handler, host, port):
         if socket_path:
             server = await asyncio.start_unix_server(unix_handler, path=socket_path)
             async with server:
-                await asyncio.Future()
-        await asyncio.Future()
+                await shutdown.wait()
+        else:
+            await shutdown.wait()
 
 
 if __name__ == "__main__":

@@ -74,8 +74,9 @@ class LangGraphRuntime:
             )
             raise
         final_message = ""
-        if last_value and last_value.get("messages"):
-            final_message = getattr(last_value["messages"][-1], "content", "")
+        messages = last_value.get("messages") if last_value else None
+        if messages:
+            final_message = getattr(messages[-1], "content", "")
         return {
             "thread_id": resolved_thread_id,
             "tool_names": self.tool_names,

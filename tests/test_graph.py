@@ -37,6 +37,10 @@ class GraphBuildTest(unittest.TestCase):
         graph = build_multi_agent_graph(settings, tools, agent_node_factory=fake_factory).compile()
         result = graph.invoke(create_initial_state("Build the plan"))
         self.assertEqual(result["messages"][-1].content, "handled by executor")
+        self.assertEqual(
+            [message.content for message in result["messages"][1:]],
+            ["handled by planner", "handled by researcher", "handled by executor"],
+        )
         self.assertIn("filesystem_list", result["agent_memory"]["planner"])
 
     def test_tool_filtering_respects_agent_permissions(self) -> None:

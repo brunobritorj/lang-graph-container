@@ -85,7 +85,8 @@ def build_multi_agent_graph(
     graph.add_edge(START, settings.agent_configs[0].name)
 
     def route_after_tool(state: GraphState) -> str:
-        return state.get("active_agent") or END
+        active_agent = state.get("active_agent")
+        return active_agent if active_agent is not None else END
 
     for agent in settings.agent_configs:
         destinations = {"tools": "tools", END: END}

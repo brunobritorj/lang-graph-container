@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from functools import partial
 from typing import Any
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
@@ -13,6 +14,13 @@ from .config import AgentConfig, AppSettings
 from .state import GraphState
 
 AgentNodeFactory = Callable[[AgentConfig, list[BaseTool]], Callable[[GraphState], dict[str, Any]]]
+
+
+def route_from_agent(profile: AgentConfig, state: GraphState) -> str:
+    last_message = state.get("messages", [])[-1]
+    if getattr(last_message, "tool_calls", None):
+        return "tools"
+    return profile.default_next_agent or END
 
 
 def _memory_for_agent(state: GraphState, agent_name: str) -> str:
@@ -79,16 +87,10 @@ def build_multi_agent_graph(
         return state.get("active_agent") or END
 
     for agent in settings.agent_configs:
-        def route(state: GraphState, profile: AgentConfig = agent) -> str:
-            last_message = state.get("messages", [])[-1]
-            if getattr(last_message, "tool_calls", None):
-                return "tools"
-            return profile.default_next_agent or END
-
         destinations = {"tools": "tools", END: END}
         if agent.default_next_agent:
             destinations[agent.default_next_agent] = agent.default_next_agent
-        graph.add_conditional_edges(agent.name, route, destinations)
+        graph.add_conditional_edges(agent.name, partial(route_from_agent, agent), destinations)
 
     graph.add_conditional_edges(
         "tools",

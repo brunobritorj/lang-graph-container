@@ -112,7 +112,9 @@ async def main() -> None:
     port = int(os.environ.get("MCP_SERVER_PORT", "8765"))
     socket_path = os.environ.get("MCP_SERVER_SOCKET_PATH")
     if socket_path:
-        os.makedirs(os.path.dirname(socket_path), exist_ok=True)
+        directory = os.path.dirname(socket_path)
+        if directory:
+            os.makedirs(directory, exist_ok=True)
         if os.path.exists(socket_path):
             os.remove(socket_path)
     async with serve(websocket_handler, host, port):

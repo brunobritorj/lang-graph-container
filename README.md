@@ -15,13 +15,13 @@ A minimal local LangGraph scaffold for orchestrating multiple custom Azure OpenA
 
 ## Project layout
 
-- `/home/runner/work/lang-graph-container/lang-graph-container/lang_graph_container/app.py` – FastAPI app with `/healthz` and `/runs`
-- `/home/runner/work/lang-graph-container/lang-graph-container/lang_graph_container/config.py` – environment-driven app and agent settings
-- `/home/runner/work/lang-graph-container/lang-graph-container/lang_graph_container/graph.py` – LangGraph state machine and shared `ToolNode`
-- `/home/runner/work/lang-graph-container/lang-graph-container/lang_graph_container/mcp_client.py` – lightweight MCP tool discovery + invocation adapter
-- `/home/runner/work/lang-graph-container/lang-graph-container/lang_graph_container/mcp_server.py` – sample external MCP server exposing filesystem, browser, and Postgres tools
-- `/home/runner/work/lang-graph-container/lang-graph-container/lang_graph_container/runtime.py` – graph startup, Redis publishing, and Postgres checkpoint wiring
-- `/home/runner/work/lang-graph-container/lang-graph-container/docker-compose.yml` – local stack wiring
+- `lang_graph_container/app.py` – FastAPI app with `/healthz` and `/runs`
+- `lang_graph_container/config.py` – environment-driven app and agent settings
+- `lang_graph_container/graph.py` – LangGraph state machine and shared `ToolNode`
+- `lang_graph_container/mcp_client.py` – lightweight MCP tool discovery + invocation adapter
+- `lang_graph_container/mcp_server.py` – sample external MCP server exposing filesystem, browser, and Postgres tools
+- `lang_graph_container/runtime.py` – graph startup, Redis publishing, and Postgres checkpoint wiring
+- `docker-compose.yml` – local stack wiring
 
 ## Configuration
 

@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=70", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lang-graph-container"
+version = "0.1.0"
+description = "Local LangGraph multi-agent scaffold with Azure OpenAI, MCP tools, Redis, and Postgres."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi==0.115.5",
+  "langchain-openai==0.2.9",
+  "langgraph==0.2.56",
+  "langgraph-checkpoint-postgres==3.0.5",
+  "psycopg[binary]==3.2.3",
+  "pydantic==2.10.2",
+  "pydantic-settings==2.6.1",
+  "redis==5.2.1",
+  "uvicorn==0.32.1",
+  "websockets==13.1"
+]
+
+[tool.setuptools.packages.find]
+include = ["lang_graph_container*"]

@@ -59,13 +59,20 @@ class LangGraphRuntime:
         resolved_thread_id = thread_id or self.settings.new_thread_id()
         config = {"configurable": {"thread_id": resolved_thread_id}}
         last_value = None
-        async for value in self.app.astream(
-            create_initial_state(prompt),
-            config=config,
-            stream_mode="values",
-        ):
-            last_value = value
-            await self.publisher.publish(resolved_thread_id, value)
+        try:
+            async for value in self.app.astream(
+                create_initial_state(prompt),
+                config=config,
+                stream_mode="values",
+            ):
+                last_value = value
+                await self.publisher.publish(resolved_thread_id, value)
+        except Exception as exc:  # noqa: BLE001
+            await self.publisher.publish(
+                resolved_thread_id,
+                {"error": str(exc), "thread_id": resolved_thread_id},
+            )
+            raise
         final_message = ""
         if last_value and last_value.get("messages"):
             final_message = getattr(last_value["messages"][-1], "content", "")

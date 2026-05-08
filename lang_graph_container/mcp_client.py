@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 from typing import Any
 
@@ -80,7 +81,9 @@ def _create_args_schema(tool: MCPToolSpec):
         fields[name] = (annotation, default)
     if not fields:
         fields["input"] = (str, None)
-    model_name = "".join(part.capitalize() for part in tool.name.split("_")) + "Args"
+    normalized_name = "".join(character for character in tool.name.title() if character.isalnum())
+    suffix = hashlib.sha1(tool.name.encode("utf-8")).hexdigest()[:8]
+    model_name = f"{normalized_name or 'Tool'}Args{suffix}"
     return create_model(model_name, **fields)
 
 

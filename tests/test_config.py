@@ -6,11 +6,23 @@ from lang_graph_container.config import AppSettings
 
 
 class AppSettingsTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.original_env = {
+            key: os.environ.get(key)
+            for key in (
+                "LANGGRAPH_AGENT_CONFIG_JSON",
+                "MCP_TRANSPORT",
+                "MCP_WEBSOCKET_URL",
+                "MCP_UNIX_SOCKET_PATH",
+            )
+        }
+
     def tearDown(self) -> None:
-        os.environ.pop("LANGGRAPH_AGENT_CONFIG_JSON", None)
-        os.environ.pop("MCP_TRANSPORT", None)
-        os.environ.pop("MCP_WEBSOCKET_URL", None)
-        os.environ.pop("MCP_UNIX_SOCKET_PATH", None)
+        for key, value in self.original_env.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
 
     def test_defaults_include_multi_agent_pipeline(self) -> None:
         settings = AppSettings()

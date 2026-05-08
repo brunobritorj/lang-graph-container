@@ -14,6 +14,7 @@ from .config import AgentConfig, AppSettings
 from .state import GraphState
 
 AgentNodeFactory = Callable[[AgentConfig, list[BaseTool]], Callable[[GraphState], dict[str, Any]]]
+MEMORY_WINDOW_SIZE = 5
 
 
 def route_from_agent(profile: AgentConfig, state: GraphState) -> str:
@@ -25,7 +26,7 @@ def route_from_agent(profile: AgentConfig, state: GraphState) -> str:
 
 def _memory_for_agent(state: GraphState, agent_name: str) -> str:
     memory = state.get("agent_memory", {}).get(agent_name, [])
-    return "\n".join(f"- {item}" for item in memory[-5:]) or "- No memory yet"
+    return "\n".join(f"- {item}" for item in memory[-MEMORY_WINDOW_SIZE:]) or "- No memory yet"
 
 
 def default_agent_node_factory(settings: AppSettings) -> AgentNodeFactory:

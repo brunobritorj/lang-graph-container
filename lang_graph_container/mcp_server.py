@@ -1,15 +1,19 @@
 from __future__ import annotations
 
 import asyncio
+import ipaddress
 import json
 import os
+import socket
 import urllib.request
+from urllib.parse import urlparse
 from typing import Any
 
 import psycopg
 from websockets.server import serve
 
 TOOLS: dict[str, dict[str, Any]] = {}
+WORKSPACE_ROOT = os.path.realpath(os.environ.get("MCP_SERVER_WORKSPACE", os.getcwd()))
 
 
 def tool(name: str, description: str, input_schema: dict[str, Any]):
@@ -36,7 +40,10 @@ def tool(name: str, description: str, input_schema: dict[str, Any]):
     },
 )
 def filesystem_list(path: str = ".") -> str:
-    return json.dumps(sorted(os.listdir(path)))
+    requested_path = os.path.realpath(os.path.join(WORKSPACE_ROOT, path))
+    if os.path.commonpath([WORKSPACE_ROOT, requested_path]) != WORKSPACE_ROOT:
+        raise ValueError("Path is outside the allowed workspace.")
+    return json.dumps(sorted(os.listdir(requested_path)))
 
 
 @tool(
@@ -49,6 +56,24 @@ def filesystem_list(path: str = ".") -> str:
     },
 )
 def browser_fetch(url: str) -> str:
+    parsed = urlparse(url)
+    if parsed.scheme not in {"http", "https"}:
+        raise ValueError("Only http and https URLs are allowed.")
+    if not parsed.hostname:
+        raise ValueError("A hostname is required.")
+    if parsed.hostname in {"localhost"}:
+        raise ValueError("Localhost is not allowed.")
+    try:
+        resolved_addresses = {
+            info[4][0]
+            for info in socket.getaddrinfo(parsed.hostname, parsed.port or (443 if parsed.scheme == "https" else 80))
+        }
+    except socket.gaierror as exc:
+        raise ValueError(f"Unable to resolve host: {parsed.hostname}") from exc
+    for address in resolved_addresses:
+        ip = ipaddress.ip_address(address)
+        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_multicast or ip.is_unspecified:
+            raise ValueError("Target host resolves to a private or otherwise blocked address.")
     with urllib.request.urlopen(url, timeout=10) as response:
         body = response.read(500).decode("utf-8", errors="replace")
     return body
@@ -82,7 +107,14 @@ async def handle_request(request: dict[str, Any]) -> dict[str, Any]:
         tool_name = params.get("name")
         arguments = params.get("arguments", {})
         definition = TOOLS[tool_name]
-        value = definition["callable"](**arguments)
+        try:
+            value = definition["callable"](**arguments)
+        except Exception as exc:  # noqa: BLE001
+            return {
+                "jsonrpc": "2.0",
+                "id": request_id,
+                "error": str(exc),
+            }
         result = {"content": [{"type": "text", "text": value}]}
     else:
         return {"jsonrpc": "2.0", "id": request_id, "error": f"Unknown method: {method}"}

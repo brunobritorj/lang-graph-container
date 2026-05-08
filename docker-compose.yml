@@ -34,6 +34,7 @@ services:
       MCP_SERVER_HOST: 0.0.0.0
       MCP_SERVER_PORT: 8765
       MCP_SERVER_SOCKET_PATH: /sockets/mcp.sock
+      MCP_SERVER_WORKSPACE: /app
       POSTGRES_URL: postgresql://langgraph:langgraph@postgres:5432/langgraph
     volumes:
       - mcp-sockets:/sockets
